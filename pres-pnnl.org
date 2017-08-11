@@ -1,0 +1,366 @@
+#+title: Cooperative search strategies for pursuing an adversarial evader
+#+author: Nicholas J. Meyer
+
+#+STARTUP: showeverything
+
+#+REVEAL_ROOT: ./reveal.js
+
+#+REVEAL_THEME: simple
+
+#+REVEAL_EXTRA_CSS: customize_theme.css
+
+#+REVEAL_EXTRA_JS: {src: './bodymovin.js'}, {src: './anim_svg.js'}
+
+#+OPTIONS: toc:nil num:nil timestamp:nil
+
+#+REVEAL_TRANS: none
+
+#+BIBLIOGRAPHY: ./sources.bib
+
+#+REVEAL_HTML: <div class="math-jax-custom-commands">
+\(\newcommand{\bs}{\boldsymbol}\)
+#+REVEAL_HTML: </div>
+
+* A bit about me...
+  - Graduate student at North Carolina State University
+    - Department of Statistics
+    - Advisor: Dr. Eric Laber
+  - Interned at PNNL in 2015
+    - Mentor: Dr. Robert Brigantic
+  - Pursuit and Evasion project
+    - Consortium for Non-Proliferation Enabling Capabilities
+
+
+* Pursuit and Evasion
+  :PROPERTIES:
+  :HTML_CONTAINER_CLASS: centered-title
+  :END:
+
+
+** Joint work with...
+   - Dr. Alyson Wilson (NCSU, CNEC)
+   - Dr. Eric Laber (NCSU)
+   - Nick Kapur (NCSU)
+   - Dr. Robert Brigantic (PNNL)
+
+
+** Pursuit and Evasion Demo
+   :PROPERTIES:
+   :reveal_data_state: pe_intro
+   :END:
+   #+REVEAL_HTML: <div id="pe_intro"></div>
+
+** Pursuit and Evasion Demo
+   :PROPERTIES:
+   :reveal_data_state: pe_evadergoals
+   :END:
+   #+REVEAL_HTML: <div id="pe_evadergoals"></div>
+
+** Pursuit and Evasion Demo
+   :PROPERTIES:
+   :reveal_data_state: pe_onestep
+   :END:
+   #+REVEAL_HTML: <div id="pe_onestep"></div>
+
+** Pursuit and Evasion Demo
+   :PROPERTIES:
+   :reveal_data_state: pe_informant
+   :END:
+   #+REVEAL_HTML: <div id="pe_informant"></div>
+
+** Pursuit and Evasion Demo
+   :PROPERTIES:
+   :reveal_data_state: pe_capture
+   :END:
+   #+REVEAL_HTML: <div id="pe_capture"></div>
+
+
+** Motivating problems
+  - National security
+    - Domestic invasion
+    - Search and destroy missions
+  - Emergency response
+    - Law enforcement responding to a fleeing suspect
+  - Wildlife management
+    - Tracking poachers of endangered animals
+
+
+** Pursuit and Evasion
+  - Formalize the search as evolving over a network of locations
+  - All players move in discrete time
+  - Possible objectives
+    1. Evader tries to reach goal and pursuers try to stop the evader
+    2. Pursuers try to catch evader and game continues until capture
+
+
+** Game Setup
+  - \(d\) pursuers
+  - 1 evader
+  - \(\lbrace 1, \ldots, L \rbrace\) nodes in the network
+  - Order of events
+    1. Pursuers gather and share state information
+    2. Pursuers move to new locations
+    3. Evader responds by moving to a new location
+  - Game terminates when the evader has reached the goal or has been caught
+    - The evader has been caught if adjacent to at least one pursuer
+
+
+** Pursuers
+  - *Goal*: Minimize expected time to capture
+  - State information available to all pursuers at each time point
+    - Locations of all pursuers
+    - Indicator for whether or not evader has been caught
+    - Information from informants and reliability of the source
+      - Reliable, deceitful, noisy
+    - Assume complete communication
+  - New locations are restricted to a feasible set
+    - E.g., can only move to adjacent locations
+  - An action is a set of new locations for each agent
+
+
+** Evader
+  - *Goal*: Reach goal without being caught by pursuers
+  - Only one evader
+  - Movements restricted to feasible set (e.g., adjacent locations)
+
+
+** Timeline
+  [[./figures/timeline.png]]
+
+
+** Player Strategies
+  - Pursuers
+    - Define \(H^t\) to be all current and past state information at
+      time \(t\)
+    - \(W^t\): Locations of all pursuers at time \(t\)
+    - \(R^t\): Reward for the pursuers at time \(t\)
+    - \(\pi = \lbrace \pi^0,\ldots,\pi^{T-1}\rbrace\): Strategy for
+      all \(d\) pursuers
+      - \(\pi^t\): Maps \(H^t\) to the set of feasible next locations
+  - Evader:
+    - \(\psi = \lbrace \psi^0, \ldots, \psi^{T-1}\rbrace\): Strategy
+      for the evader
+    - \(\psi^t\): Maps current location to the set of feasible next
+      locations
+
+
+** Optimal Pursuer Strategies
+  - Value of the pursuer strategy \(\pi\) assuming evader follows
+    \(\psi\) \[V(\pi; \psi) \triangleq \mathbb{E}^{\pi, \psi}\left(
+    \sum_{t\ge 0} \gamma^t R^t\right) \] where \(\mathbb{E}^{\pi, \psi}\)
+    denotes the expectation if pursuers follow \(\pi\) and the evader
+    follows \(\psi\) and \(\gamma \in [0, 1)\) is the discount factor
+  - Define \(J^t_\psi(\cdot | h^t)\) to be the posterior distribution
+    of the evader's location given \(H^t = h^t\) and the evader is
+    following \(\psi\)
+  - For any \(\pi\) and \(\psi\), there exists a pursuer strategy
+    \(\widetilde{\pi}\) depending on \(H^t\) through the current state
+    and \(J^t_\psi(\cdot | H^t)\) such that \(V(\widetilde{\pi}, \psi)
+    \ge V(\pi; \psi)\)
+
+
+** Thompson Sampling
+  [[./figures/thompson_sampling.png]]
+
+
+** Estimating Optimal Pursuer Strategy
+
+  - Q-function is a sufficient quantity for making optimal decisions
+    \[Q^{*, \psi}(\bs{w}, \bs{J}, \bs{a}) = \mathbb{E}^{*,
+    \psi}\left[\sum_{v\ge 0} \gamma^v R^{t + v} \bigg| \bs{W}^t =
+    \bs{w}, \bs{J}^t = \bs{J},
+    \bs{A}^t = \bs{a}\right]\]
+
+  - Under the Markov assumption \[Q^{*, \psi}(\bs{w},
+    \bs{J}, \bs{a}) = \mathbb{E}^{*, \psi}\left[R^t +
+    \gamma \max_{\bs{a}'} Q^{*, \psi}(\bs{W}^{t+1},
+    \bs{J}^{t+1}, \bs{a}') \bigg| \cdots \right]\]
+
+  - Can write using a \(n\)-step roll out
+    \[Q^{*, \psi}(\bs{w}, \bs{J}, \bs{a}) =
+    \mathbb{E}^{*, \psi}\left[\sum_{v = 0}^{n-1} \gamma^v R^{t+v} +
+    \gamma^n \max_{\bs{a}'} Q^{*,
+    \psi}(\bs{W}^{t+n}, \bs{J}^{t+n}, \bs{a}')
+    \bigg| \cdots \right]\]
+
+
+** Heuristic Strategy
+  - Approximate Q-function using a heuristic strategy \[Q^{*,
+    \psi}(\bs{w}, \bs{J}, \bs{a}) \approx \mathbb{E}^{*,
+    \psi}\left[\sum_{v = 0}^{n-1} \gamma^v R^{t+v} + \gamma^{n}
+    \max_{\bs{a}'} Q^{\pi_H, \psi}(\bs{W}^{t+n}, \bs{J}^{t+n},
+    \bs{a}') \bigg| \cdots\right]\]
+
+  - Heuristic strategy \(\pi_H\) is a variant of the /global-max/
+    strategy
+    - Find locations of the posterior with highest coverage
+    - Select actions that move the pursuers closest to these locations
+
+
+** Simulation Experiment Setup
+  #+REVEAL_HTML: <div class="columns">
+
+  #+REVEAL_HTML: <div class="column" style="padding: 1em 0">
+  - Number of pursuers: 1, 2, 3
+  - Number of steps before heuristic: 0, 1, 2
+  - Evader is following a random walk indexed by goal and drift
+  - Game ends when evader reaches the goal state or has been caught
+  - 500 replications
+  #+REVEAL_HTML: </div>
+
+  #+REVEAL_HTML: <div class="column">
+  [[./figures/sim_setup.png]]
+  #+REVEAL_HTML: </div>
+
+  #+REVEAL_HTML: </div>
+
+
+** Simulation Experiment Results
+  #+attr_html: :width 55%
+  [[./figures/prob_capture.svg]]
+
+
+** Future Work
+  - Estimate prior over evader behaviors using Nash process prior
+  - Intelligent evader that adapts over time
+  - Prioritization of capture zones
+  - Incorporate additional actions besides movement
+
+
+* Semi-Parametric Epidemic Control Strategies
+  :PROPERTIES:
+  :HTML_CONTAINER_CLASS: centered-title
+  :END:
+
+
+** Ebola Virus
+   - Deadly virus affecting humans and non-human primates
+   - West Africa has the largest outbreak in history
+     - Started in April 2014
+     - Two out of five cases resulted in death
+
+  #+ATTR_HTML: :width 60%
+  [[./figures/ebola_obs_outbreaks.svg]]
+
+
+** Managing Spread of Ebola
+   - Allocating treatments for Ebola requires decisions over time and
+     space
+     - Other applications: social networks, computer networks, urban
+       development, etc.
+   - High dimensional problem
+     - Treat 100 of possible 1000 locations \(\rightarrow 6.38 \times
+       10^{139}\)
+   - *Goal*: Estimate optimal treatment strategy
+
+
+** Model Based Policy Search
+   - Policy search directly optimizes over class of strategies
+     - Postulate working model for disease dynamics
+     - Estimate optimal strategy via simulation optimization
+   - Pros:
+     - Easy to include scientific knowledge
+     - Low variance
+   - Cons:
+     - Potentially high bias
+     - Computationally expensive
+
+
+** Semi-Parametric Estimation
+   - Approximate dynamic programming
+     - Specify a model for the Q-function
+     - Construct an estimating equation
+   - Pros:
+     - Low bias
+     - Does not require specifying a dynamics model
+   - Cons:
+     - Difficult to incorporate scientific knowledge
+     - High variance with few observations
+
+
+** Simulation Experiment
+   - Simulate spread of Ebola on toy network structures
+   - Initially infect 10% of locations
+   - Simulation runs for 25 time points
+     - Treatment starts immediately
+   - Generative model is a mixture governed by \(\delta \in [0, 1]\)
+     - Increasingly misspecified as \(\delta \rightarrow 1\)
+   - A maximum of 5% of locations are treated
+   - Outcome is the final proportion of locations infected
+
+
+** Toy Network Structures
+   #+REVEAL_HTML: <div class="columns" style="padding: 3em">
+
+   #+REVEAL_HTML: <div class="column" style="padding: 0 0">
+   #+CAPTION: Lattice
+   #+ATTR_HTML: :width 75%
+   [[./figures/grid_10x10.svg]]
+   #+REVEAL_HTML: </div>
+
+   #+REVEAL_HTML: <div class="column" style="padding: 0 0">
+   #+CAPTION: Random
+   #+ATTR_HTML: :width 75%
+   [[./figures/random_100.svg]]
+   #+REVEAL_HTML: </div>
+
+   #+REVEAL_HTML: <div class="column" style="padding: 0 0">
+   #+CAPTION: Scale-free
+   #+ATTR_HTML: :width 75%
+   [[./figures/barabasi_100.svg]]
+   #+REVEAL_HTML: </div>
+
+   #+REVEAL_HTML: </div>
+
+
+** Simulation Results: Lattice
+   #+ATTR_HTML: :width 85%
+   [[./figures/toy_sim_results_grid.svg]]
+
+
+** Simulation Results: Ebola
+   #+ATTR_HTML: :width 65%
+   [[./figures/ebola_obs_outbreaks.svg]]
+
+   #+ATTR_HTML: :style font-size:0.6em
+   | None            | Random          | Proximal        | Myopic          | Model based     |
+   |-----------------+-----------------+-----------------+-----------------+-----------------|
+   | 0.69 (0.0038)   | 0.64 (0.0040)   | 0.61 (0.0040)   | 0.58 (0.0041)   | 0.52 (0.0042)   |
+
+
+** Future Work
+   - Immediate detection of outbreaks
+   - Known network structure
+   - Adaptive switch-over between model-based and semi-parametric
+   - Extension to larger problems (e.g., 1 million locations)
+
+
+* Some other stuff
+  - AI players for video games
+    - Games made in-house
+  - Laber Labs (www.laber-labs.com)
+  - Argo AI
+    - Autonomous vehicles
+
+
+* References
+  bibliography:./sources.bib
+  cite:Boyles2011
+  cite:Blehert2009
+  cite:Maher2012
+  cite:ertefaie2014
+  cite:thompson1933likelihood
+  cite:Kramer2016
+  cite:Li2017
+  cite:Gosavi2014
+  cite:minnier2011perturbation
+
+* Final Slide
+  :PROPERTIES:
+  :HTML_CONTAINER_CLASS: final-slide
+  :END:
+  #+REVEAL_HTML: <div style="text-align: center; padding: 15%">
+  Thank you for listening!
+
+  Questions?
+  #+REVEAL_HTML: </div>
