@@ -306,7 +306,7 @@
 .reveal table {
   border-width: 1px;
   border-spacing: 2px;
-  border-style: dotted;
+  border-style: solid;
   border-color: gray;
   border-collapse: collapse;
   font-size: 0.7em;
@@ -317,7 +317,7 @@
   padding-left: 10px;
   padding-right: 25px;
   font-weight: bold;
-  border-style: dotted;
+  border-style: solid;
   border-color: gray;
 }
 
@@ -325,7 +325,7 @@
   border-width: 1px;
   padding-left: 10px;
   padding-right: 25px;
-  border-style: dotted;
+  border-style: solid;
   border-color: gray;
 }
 
